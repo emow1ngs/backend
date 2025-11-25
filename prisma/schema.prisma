@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  username      String   @unique
+  email         String   @unique
+  passwordHash  String
+  isPublic      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  movies        Movie[]
+  series        Series[]
+  refreshTokens RefreshToken[]
+  
+  @@map("users")
+}
+
+model Movie {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  externalId      String?
+  title           String
+  originalTitle   String?
+  year            Int?
+  genres          String?  @db.Text
+  posterUrl       String?
+  backdropUrl     String?
+  description     String?
+  director        String?
+  cast            String?  @db.Text
+  duration        Int?
+  rating          Float?
+  
+  status          WatchStatus
+  userRating      Int?
+  userNotes       String?
+  watchedDate     DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([userId, status])
+  @@map("movies")
+}
+
+model Series {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  externalId      String?
+  title           String
+  originalTitle   String?
+  year            Int?
+  genres          String?  @db.Text
+  posterUrl       String?
+  backdropUrl     String?
+  description     String?
+  creator         String?
+  cast            String?  @db.Text
+  
+  totalSeasons    Int?
+  totalEpisodes   Int?
+  episodeDuration Int?
+  rating          Float?
+  seasonsData     String?  @db.Text // JSON с детальной информацией о сезонах
+  
+  status          WatchStatus
+  userRating      Int?
+  userNotes       String?
+  currentSeason   Int?
+  currentEpisode  Int?
+  watchedEpisodes Int      @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([userId, status])
+  @@map("series")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+enum WatchStatus {
+  PLANNED
+  WATCHING
+  WATCHED
+}
